@@ -1,0 +1,406 @@
+// web-scraper-backend/index.js
+const express = require('express');
+const bodyParser = require('body-parser');
+const request = require('request-promise');
+const cheerio = require('cheerio');
+const fs = require('fs');
+const Json2csvParser = require('json2csv').Parser;
+
+const app = express();
+const port = 3001;
+
+app.use(bodyParser.json());
+
+app.post('/scrape', async (req, res) => {
+  const { urls, selectors } = req.body;
+  let pages = [];
+
+  for (let article of urls) {
+    const response = await request({
+      uri: article.trim(),
+      gzip: true,
+    });
+
+    let $ = cheerio.load(response);
+
+    let pageData = {};
+
+    selectors.forEach((selector) => {
+      let values = [];
+      $(selector).each((index, element) => {
+        values.push($(element).text().trim());
+      });
+      pageData[selector] = values;
+    });
+
+    pages.push(pageData);
+  }
+
+  const tableString = getTableString(pages);
+
+  // Save data to a file or database as needed
+  fs.writeFileSync('./data.json', JSON.stringify(pages), 'utf-8');
+
+  res.json({ tableString, pages });
+});
+
+// table string
+function getTableString(pages) {
+  let tableString = '';
+  pages.forEach((page) => {
+    for (let key in page) {
+      tableString += `${key}: ${page[key].join(', ')}\n`;
+    }
+    tableString += '\n';
+  });
+  return tableString;
+}
+
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// src/components/ScraperForm.js
+import React, { useState } from 'react';
+import axios from 'axios';
+
+const ScraperForm = () => {
+  const [urls, setUrls] = useState('');
+  const [selectors, setSelectors] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await axios.post('http://localhost:3001/scrape', {
+        urls: urls.split(',').map((url) => url.trim()),
+        selectors: selectors.split(',').map((selector) => selector.trim()),
+      });
+
+      console.log(response.data); // Handle the response as needed
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <label>
+        Enter URLs (comma-separated):
+        <input type="text" value={urls} onChange={(e) => setUrls(e.target.value)} />
+      </label>
+      <br />
+      <label>
+        Enter jQuery selectors (comma-separated):
+        <input type="text" value={selectors} onChange={(e) => setSelectors(e.target.value)} />
+      </label>
+      <br />
+      <button type="submit">Submit</button>
+    </form>
+  );
+};
+
+export default ScraperForm;
+
+
+
+
+
+
+
+// web-scraper-frontend/src/App.js
+import React from 'react';
+import ScraperForm from './components/ScraperForm';
+
+function App() {
+  return (
+    <div className="App">
+      <ScraperForm />
+    </div>
+  );
+}
+
+export default App;
+
+
+
+
+
+
+
+frontend:
+
+npm install axios
+
+
+
+
+backend:
+
+mkdir web-scraper-backend
+cd web-scraper-backend
+npm init -y
+npm install express body-parser request-promise cheerio fs json2csv
+
+npm install express body-parser request-promise cheerio fs json2csv
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+const request = require('request-promise');
+const cheerio = require('cheerio');
+const fs = require('fs');
+const Json2csvParser = require('json2csv').Parser;
+ 
+const readline = require('readline-sync');
+ 
+ 
+const URLS = readline.question('Enter URLs (comma-separated): ').split(',');
+ 
+const selectors = readline.question('Enter jQuery selectors (comma-separated): ').split(',');
+ 
+(async () => {
+  let pages = [];
+ 
+  for (let article of URLS) {
+    const response = await request({
+      uri: article.trim(),
+      gzip: true,
+    });
+ 
+    let $ = cheerio.load(response);
+ 
+    let pageData = {};
+ 
+    selectors.forEach((selector) => {
+      let values = [];
+      $(selector).each((index, element) => {
+        values.push($(element).text().trim());
+      });
+      pageData[selector] = values;
+    });
+ 
+    pages.push(pageData);
+  }
+ 
+  fs.writeFileSync('./data.json', JSON.stringify(pages), 'utf-8');
+ 
+  const tableString = getTableString(pages);
+  const outputPath = './output.txt';
+  fs.writeFileSync(outputPath, tableString, 'utf-8');
+ 
+ 
+  console.table(pages);
+  console.dirxml(pages);
+ 
+ 
+  const fields = selectors;
+  const json2csvParser = new Json2csvParser({ fields });
+  const csv = json2csvParser.parse(pages);
+  // console.log(csv);
+ 
+  debugger;
+})();
+ 
+//table string
+function getTableString(pages) {
+  let tableString = '';
+  pages.forEach((page) => {
+    for (let key in page) {
+      tableString += `${key}: ${page[key].join(', ')}\n`;
+    }
+    tableString += '\n';
+  });
+  return tableString;
+}
+ 
+npm install -g npm-check-updates
+ncu -u
+npm install
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+BACKEND CODE: back/index.js
+
+const express = require('express');
+const bodyParser = require('body-parser');
+const request = require('request-promise');
+const cheerio = require('cheerio');
+const fs = require('fs');
+const Json2csvParser = require('json2csv').Parser;
+const cors = require('cors'); 
+
+
+const app = express();
+const port = 3011;
+
+app.use(bodyParser.json());
+app.use(cors());
+
+
+app.get('/', (req, res) => {
+    res.send('Hello, this is the root!');
+  });
+  
+  
+
+app.post('/scrape', async (req, res) => {
+  const { urls, selectors } = req.body;
+  let pages = [];
+//   console.log("ehllo")
+
+  for (let article of urls) {
+    const response = await request({
+      uri: article.trim(),
+      gzip: true,
+    });
+
+    let $ = cheerio.load(response);
+
+    let pageData = {};
+
+    selectors.forEach((selector) => {
+      let values = [];
+      $(selector).each((index, element) => {
+        values.push($(element).text().trim());
+      });
+      pageData[selector] = values;
+    });
+
+    pages.push(pageData);
+  }
+
+
+  // Save data to a file or database as needed
+  fs.writeFileSync('./data.json', JSON.stringify(pages), 'utf-8');
+
+const tableString = getTableString(pages);
+const outputPath = './output.txt';
+fs.writeFileSync(outputPath, tableString, 'utf-8');
+
+  res.json({ tableString, pages });
+
+
+  const fields = selectors;
+  const json2csvParser = new Json2csvParser({ fields });
+  const csv = json2csvParser.parse(pages);
+  console.log(csv);
+
+
+  
+console.table(pages);
+
+});
+
+// table string
+function getTableString(pages) {
+  let tableString = '';
+  pages.forEach((page) => {
+    for (let key in page) {
+      tableString += `${key}: ${page[key].join(', ')}\n`;
+    }
+    tableString += '\n';
+  });
+  return tableString;
+}
+
+
+
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+});
+
+
+
+
+
+
+FRONTEND CODE: front/src/components/ScraperForm.js
+
+
+import React, { useState } from 'react';
+import axios from 'axios';
+
+const ScraperForm = () => {
+  const [urls, setUrls] = useState('');
+  const [selectors, setSelectors] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+        const response = await axios.post('http://localhost:3011/scrape', {
+            urls: urls.split(',').map((url) => url.trim()),
+            selectors: selectors.split(',').map((selector) => selector.trim()),
+          });
+
+      console.log(response.data); 
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+//save in stae and print as map
+
+  return (
+     <form onSubmit={handleSubmit}>
+      <label>
+        Enter URLs (comma-separated):
+        <input type="text" value={urls} onChange={(e) => setUrls(e.target.value)} />
+      </label>
+      <br />
+      <label>
+        Enter jQuery selectors (comma-separated):
+        <input type="text" value={selectors} onChange={(e) => setSelectors(e.target.value)} />
+      </label>
+      <br />
+      <button type="submit">Submit</button>
+  
+    </form>
+
+  );
+};
+
+export default ScraperForm;
+
+
+
+Heres the frontend and backend of a Folder. currently the inputs on frontend is giving output on the server console. modify the code such that the output that is displayed in the console of the server should be printed on the frontend webpage also.
+
